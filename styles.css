@@ -107,7 +107,7 @@ button:disabled {
 #auth input {
     padding: 5px;
     margin: 5px;
-    width: 150px;
+    width: 200px; /* Wider for email */
 }
 
 #history {
