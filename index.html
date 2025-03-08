@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Personal Aim Trainer</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>My Aim Trainer</h1>
+        <div id="auth">
+            <div id="login-form">
+                <input type="text" id="username" placeholder="Username">
+                <input type="password" id="password" placeholder="Password">
+                <button id="login-btn">Login</button>
+                <button id="signup-btn">Sign Up</button>
+            </div>
+            <p id="auth-status"></p>
+            <button id="logout-btn" style="display: none;">Logout</button>
+        </div>
+        <div id="game" style="display: none;">
+            <div id="stats">
+                <p>Score: <span id="score">0</span></p>
+                <p>Time Left: <span id="time">30</span>s</p>
+                <p>Rank: <span id="rank">Unranked</span></p>
+                <p>Credits: <span id="credits">0</span></p>
+            </div>
+            <div id="settings">
+                <label>Game Time (s): <input type="number" id="game-time" value="30" min="5" max="120"></label>
+                <label>Target Size (px): <input type="number" id="target-size" value="50" min="20" max="100"></label>
+                <button id="start-btn">Start</button>
+                <button id="shop-btn">Shop</button>
+            </div>
+            <div id="game-area"></div>
+            <h2>Performance History</h2>
+            <table id="history">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Score</th>
+                        <th>Rank</th>
+                    </tr>
+                </thead>
+                <tbody id="history-body"></tbody>
+            </table>
+            <div id="shop" style="display: none;">
+                <h2>Shop</h2>
+                <h3>Backgrounds</h3>
+                <button class="shop-item" data-type="bg" data-id="default">Default (Free)</button>
+                <button class="shop-item" data-type="bg" data-id="gradient">Gradient (50 Credits)</button>
+                <button class="shop-item" data-type="bg" data-id="space">Space (100 Credits)</button>
+                <h3>Hit Animations</h3>
+                <button class="shop-item" data-type="anim" data-id="none">None (Free)</button>
+                <button class="shop-item" data-type="anim" data-id="burst">Burst (50 Credits)</button>
+                <button class="shop-item" data-type="anim" data-id="ripple">Ripple (100 Credits)</button>
+                <button id="close-shop">Close</button>
+            </div>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
