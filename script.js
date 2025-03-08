@@ -1,143 +1,273 @@
-body {
-    font-family: Arial, sans-serif;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-    margin: 0;
-    background-color: #e0e0e0;
+const gameArea = document.getElementById('game-area');
+const startBtn = document.getElementById('start-btn');
+const shopBtn = document.getElementById('shop-btn');
+const scoreDisplay = document.getElementById('score');
+const timeDisplay = document.getElementById('time');
+const rankDisplay = document.getElementById('rank');
+const creditsDisplay = document.getElementById('credits');
+const gameTimeInput = document.getElementById('game-time');
+const targetSizeInput = document.getElementById('target-size');
+const loginBtn = document.getElementById('login-btn');
+const signupBtn = document.getElementById('signup-btn');
+const logoutBtn = document.getElementById('logout-btn');
+const usernameInput = document.getElementById('username');
+const passwordInput = document.getElementById('password');
+const authStatus = document.getElementById('auth-status');
+const authDiv = document.getElementById('auth');
+const gameDiv = document.getElementById('game');
+const historyBody = document.getElementById('history-body');
+const shopDiv = document.getElementById('shop');
+const closeShopBtn = document.getElementById('close-shop');
+
+let score = 0;
+let timeLeft = 0;
+let gameActive = false;
+let targetSize = 50;
+let currentUser = null;
+let credits = 0;
+let upgrades = { bg: 'default', anim: 'none' };
+
+const shopItems = {
+    bg: {
+        default: { cost: 0, name: 'Default' },
+        gradient: { cost: 50, name: 'Gradient' },
+        space: { cost: 100, name: 'Space' }
+    },
+    anim: {
+        none: { cost: 0, name: 'None' },
+        burst: { cost: 50, name: 'Burst' },
+        ripple: { cost: 100, name: 'Ripple' }
+    }
+};
+
+// Load/Save Data
+function loadUsers() {
+    return JSON.parse(localStorage.getItem('users')) || {};
 }
 
-.container {
-    text-align: center;
-    padding: 20px;
+function saveUsers(users) {
+    localStorage.setItem('users', JSON.stringify(users));
 }
 
-#game-area {
-    width: 700px;
-    height: 500px;
-    border: 3px solid #222;
-    position: relative;
-    background-color: #fff;
-    margin-top: 20px;
-    overflow: hidden;
+function loadUserData(username) {
+    const data = JSON.parse(localStorage.getItem(`data_${username}`)) || {};
+    return {
+        history: data.history || [],
+        credits: data.credits || 0,
+        upgrades: data.upgrades || { bg: 'default', anim: 'none' }
+    };
 }
 
-#game-area.bg-gradient {
-    background: linear-gradient(135deg, #ff6b6b, #4ecdc4);
+function saveUserData(username, history, credits, upgrades) {
+    localStorage.setItem(`data_${username}`, JSON.stringify({ history, credits, upgrades }));
 }
 
-#game-area.bg-space {
-    background: url('https://via.placeholder.com/700x500?text=Space') center/cover;
+// Rank System
+function getRank(score) {
+    if (score <= 10) return "Rookie";
+    else if (score <= 20) return "Amateur";
+    else if (score <= 30) return "Skilled";
+    else if (score <= 40) return "Pro";
+    else if (score <= 50) return "Elite";
+    else return "Legend";
 }
 
-.target {
-    background-color: #ff4444;
-    border-radius: 50%;
-    position: absolute;
-    cursor: crosshair;
-    transition: transform 0.1s ease;
+// Authentication with Gmail Validation
+loginBtn.addEventListener('click', () => {
+    const users = loadUsers();
+    const username = usernameInput.value.toLowerCase();
+    const password = passwordInput.value;
+    if (users[username] && users[username] === password) {
+        currentUser = username;
+        const userData = loadUserData(username);
+        credits = userData.credits;
+        upgrades = userData.upgrades;
+        authStatus.textContent = `Logged in as ${username}`;
+        authDiv.querySelector('#login-form').style.display = 'none';
+        logoutBtn.style.display = 'inline';
+        gameDiv.style.display = 'block';
+        creditsDisplay.textContent = credits;
+        loadUserHistory();
+        applyUpgrades();
+    } else {
+        authStatus.textContent = 'Invalid Gmail or password';
+    }
+});
+
+signupBtn.addEventListener('click', () => {
+    const users = loadUsers();
+    const username = usernameInput.value.toLowerCase();
+    const password = passwordInput.value;
+    if (!username.endsWith('@gmail.com')) {
+        authStatus.textContent = 'Please use a Gmail address (e.g., example@gmail.com)';
+    } else if (users[username]) {
+        authStatus.textContent = 'This Gmail is already registered';
+    } else if (username && password) {
+        users[username] = password;
+        saveUsers(users);
+        authStatus.textContent = 'Sign up successful! Please log in.';
+        usernameInput.value = '';
+        passwordInput.value = '';
+    } else {
+        authStatus.textContent = 'Enter a Gmail address and password';
+    }
+});
+
+logoutBtn.addEventListener('click', () => {
+    currentUser = null;
+    authStatus.textContent = '';
+    authDiv.querySelector('#login-form').style.display = 'block';
+    logoutBtn.style.display = 'none';
+    gameDiv.style.display = 'none';
+    historyBody.innerHTML = '';
+});
+
+// Game Logic
+startBtn.addEventListener('click', startGame);
+
+function startGame() {
+    if (gameActive || !currentUser) return;
+    gameActive = true;
+    score = 0;
+    timeLeft = parseInt(gameTimeInput.value) || 30;
+    targetSize = parseInt(targetSizeInput.value) || 50;
+    scoreDisplay.textContent = score;
+    timeDisplay.textContent = timeLeft;
+    rankDisplay.textContent = "Unranked";
+    startBtn.disabled = true;
+    gameArea.innerHTML = '';
+
+    spawnTarget();
+    const timer = setInterval(() => {
+        timeLeft--;
+        timeDisplay.textContent = timeLeft;
+        if (timeLeft <= 0) {
+            clearInterval(timer);
+            gameActive = false;
+            startBtn.disabled = false;
+            const finalRank = getRank(score);
+            rankDisplay.textContent = finalRank;
+            credits += score;
+            creditsDisplay.textContent = credits;
+            savePerformance(score, finalRank);
+            saveUserData(currentUser, loadUserData(currentUser).history, credits, upgrades);
+            alert(`Game Over! Score: ${score} | Rank: ${finalRank} | Credits Earned: ${score}`);
+            gameArea.innerHTML = '';
+        }
+    }, 1000);
 }
 
-.target:hover {
-    transform: scale(1.1);
+function spawnTarget() {
+    if (!gameActive) return;
+
+    const target = document.createElement('div');
+    target.classList.add('target');
+    target.style.width = `${targetSize}px`;
+    target.style.height = `${targetSize}px`;
+    const x = Math.random() * (gameArea.offsetWidth - targetSize);
+    const y = Math.random() * (gameArea.offsetHeight - targetSize);
+    target.style.left = `${x}px`;
+    target.style.top = `${y}px`;
+
+    target.addEventListener('click', () => {
+        score++;
+        scoreDisplay.textContent = score;
+        if (upgrades.anim !== 'none') {
+            target.classList.add(`hit-${upgrades.anim}`);
+            target.addEventListener('animationend', () => {
+                gameArea.removeChild(target);
+                spawnTarget();
+            }, { once: true });
+        } else {
+            gameArea.removeChild(target);
+            spawnTarget();
+        }
+    });
+
+    gameArea.appendChild(target);
 }
 
-.hit-burst {
-    animation: burst 0.3s ease forwards;
+// Performance History
+function savePerformance(score, rank) {
+    const userData = loadUserData(currentUser);
+    const history = userData.history;
+    const entry = {
+        date: new Date().toLocaleString(),
+        score: score,
+        rank: rank
+    };
+    history.push(entry);
+    saveUserData(currentUser, history, credits, upgrades);
+    loadUserHistory();
 }
 
-.hit-ripple {
-    animation: ripple 0.5s ease forwards;
+function loadUserHistory() {
+    const userData = loadUserData(currentUser);
+    const history = userData.history;
+    historyBody.innerHTML = '';
+    history.forEach(entry => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${entry.date}</td>
+            <td>${entry.score}</td>
+            <td>${entry.rank}</td>
+        `;
+        historyBody.appendChild(row);
+    });
 }
 
-@keyframes burst {
-    0% { transform: scale(1); opacity: 1; }
-    100% { transform: scale(2); opacity: 0; }
+// Shop and Upgrades
+shopBtn.addEventListener('click', () => {
+    shopDiv.style.display = 'block';
+    updateShopButtons();
+});
+
+closeShopBtn.addEventListener('click', () => {
+    shopDiv.style.display = 'none';
+});
+
+document.querySelectorAll('.shop-item').forEach(button => {
+    button.addEventListener('click', () => {
+        const type = button.getAttribute('data-type');
+        const id = button.getAttribute('data-id');
+        const item = shopItems[type][id];
+        if (credits >= item.cost) {
+            credits -= item.cost;
+            upgrades[type] = id;
+            creditsDisplay.textContent = credits;
+            saveUserData(currentUser, loadUserData(currentUser).history, credits, upgrades);
+            applyUpgrades();
+            updateShopButtons();
+            alert(`Purchased ${item.name} ${type === 'bg' ? 'Background' : 'Hit Animation'}!`);
+        } else {
+            alert('Not enough credits!');
+        }
+    });
+});
+
+function applyUpgrades() {
+    gameArea.className = 'game-area';
+    if (upgrades.bg !== 'default') {
+        gameArea.classList.add(`bg-${upgrades.bg}`);
+    }
 }
 
-@keyframes ripple {
-    0% { box-shadow: 0 0 0 0 rgba(255, 68, 68, 0.7); }
-    100% { box-shadow: 0 0 0 20px rgba(255, 68, 68, 0); }
+function updateShopButtons() {
+    document.querySelectorAll('.shop-item').forEach(button => {
+        const type = button.getAttribute('data-type');
+        const id = button.getAttribute('data-id');
+        const item = shopItems[type][id];
+        button.disabled = upgrades[type] === id;
+        button.textContent = `${item.name} (${item.cost} Credits${upgrades[type] === id ? ' - Active' : ''})`;
+    });
 }
 
-#stats {
-    display: flex;
-    justify-content: space-around;
-    font-size: 18px;
-    margin: 10px 0;
-}
-
-#stats p {
-    margin: 0 10px;
-}
-
-#rank {
-    color: #4CAF50;
-    font-weight: bold;
-}
-
-#settings {
-    margin: 15px 0;
-}
-
-#settings label {
-    margin: 0 10px;
-}
-
-#settings input {
-    width: 60px;
-    padding: 5px;
-}
-
-button {
-    padding: 8px 16px;
-    font-size: 16px;
-    background-color: #4CAF50;
-    color: white;
-    border: none;
-    cursor: pointer;
-    margin: 5px;
-}
-
-button:disabled {
-    background-color: #aaaaaa;
-}
-
-#auth input {
-    padding: 5px;
-    margin: 5px;
-    width: 200px; /* Wider for email */
-}
-
-#history {
-    margin-top: 20px;
-    border-collapse: collapse;
-    width: 100%;
-    max-width: 700px;
-}
-
-#history th, #history td {
-    border: 1px solid #ddd;
-    padding: 8px;
-}
-
-#history th {
-    background-color: #4CAF50;
-    color: white;
-}
-
-#shop {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: white;
-    padding: 20px;
-    border: 2px solid #222;
-    box-shadow: 0 0 10px rgba(0,0,0,0.5);
-}
-
-.shop-item:disabled {
-    background-color: #ccc;
+// Initial Load
+if (currentUser) {
+    const userData = loadUserData(currentUser);
+    credits = userData.credits;
+    upgrades = userData.upgrades;
+    creditsDisplay.textContent = credits;
+    loadUserHistory();
+    applyUpgrades();
 }
