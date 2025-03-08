@@ -85,7 +85,7 @@ body {
     margin: 0 10px;
 }
 
-#settings input {
+#settings input, #settings select {
     width: 60px;
     padding: 5px;
 }
@@ -107,7 +107,7 @@ button:disabled {
 #auth input {
     padding: 5px;
     margin: 5px;
-    width: 200px; /* Wider for email */
+    width: 200px;
 }
 
 #history {
@@ -127,7 +127,7 @@ button:disabled {
     color: white;
 }
 
-#shop {
+#shop, #stats-panel {
     position: fixed;
     top: 50%;
     left: 50%;
@@ -140,4 +140,8 @@ button:disabled {
 
 .shop-item:disabled {
     background-color: #ccc;
+}
+
+#stats-graph {
+    margin-top: 20px;
 }
