@@ -1,0 +1,17 @@
+{
+    "name": "aimtrainer-app",
+    "version": "1.0.0",
+    "description": "An Aimlabs-inspired aim trainer desktop app",
+    "main": "main.js",
+    "scripts": {
+        "start": "electron .",
+        "pack": "electron-builder --dir",
+        "dist": "electron-builder"
+    },
+    "author": "Your Name",
+    "license": "MIT",
+    "devDependencies": {
+        "electron": "^23.0.0",
+        "electron-builder": "^23.6.0"
+    }
+}
